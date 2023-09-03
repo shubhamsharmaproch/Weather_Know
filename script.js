@@ -1,72 +1,81 @@
-const fetchDataBtn = document.querySelector("#fbtn");
+let fetchbtn = document.getElementById("fetch-btn")
+const Apikey = "1a30c9937583a6913d3119c0f4e7631f";
+const weatherdata = document.getElementById("weather");
 
-const mapView = document.querySelector(".map");
-const detailsData = document.querySelector(".data");
-const locationData = document.querySelector(".locationData");
-const api = "c498aad05e6a6363d0f2d7a03437d474";
-
-async function getData(lat, long) {
-  const promise = await fetch(
-    `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${long}&exclude=current&appid=${api}`
-  );
-  return await promise.json();
+function fetchLocation() {
+    weatherdata.innerHTML="";
+  let lat;
+  let long;
+  navigator.geolocation.getCurrentPosition(success, error);
+  function success(position) {
+    lat = position.coords.latitude;
+    long = position.coords.longitude;
+    renderlocation(lat, long);
+    weather(lat, long);
+  }
+  function error(err) {
+    if (err.code === 1) throw new Error("geolocation-permission_denied");
+    if (err.code === 2) throw new Error("geolocation-unavailable");
+    if (err.code === 3) throw new Error("geolocation-timeout");
+  }
 }
 
-async function gotLocation(position) {
-  const result = await getData(
-    position.coords.latitude,
-    position.coords.longitude
-  );
-  console.log(result);
-  detailData(result);
+function renderlocation(lat, long) {
+
+  let topelement = document.createElement("div");
+  topelement.className = "top";
+  topelement.innerHTML = `
+     <h1>Welcome To The Weather App</h1>
+     <p>Here is your current location</p>
+     <div>
+       <span>Lat : ${lat}</span>
+       <span>Long : ${long}</span>
+   </div>
+   <div class="map-container">
+       <!-- <img src="asset/Screenshot 2022-12-14 at 7.18 1.svg" alt="map"> -->
+       <iframe src="https://maps.google.com/maps?q=${lat},  ${long}&z=15&output=embed" style="width:90vw;  height:40vw;" frameborder="0" style="border:0"></iframe>
+   </div>`;
+
+  weatherdata.appendChild(topelement);
+  console.log(2344);
 }
 
-function failedLocation() {
-  console.log("There was Some issue");
+function renderWeatherData(data) {
+  const bottomelement = document.createElement("div");
+  bottomelement.className = "bottom";
+  bottomelement.innerHTML = `<h1>Your Weather Data</h1>
+    <div>
+        <span>Location : ${data.name}</span>
+        <span>Wind Speed : ${Math.floor((data.wind.speed)*3.6)}kmph</span>
+        <span>Humidity : ${(data.main.humidity)}</span>
+        <span>Time one : GMT +${Number(data.timezone)/3600}</span>
+        <span>Pressure : ${Math.ceil((data.main.pressure)*0.0009869233)}atm</span>
+        <span>Wind direction : North West</span>
+        <span>UV Index : 500</span>
+        <span>Feels like : ${data.main.feels_like}°</span>
+
+    </div>`;
+  weatherdata.appendChild(bottomelement);
 }
 
-fetchDataBtn.addEventListener("click", async () => {
-  navigator.geolocation.getCurrentPosition(gotLocation, failedLocation);
+
+async function weather(lat, long) {
+    try{
+        const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${long}&appid=${Apikey}&units=metric`);
+        const data = await response.json();
+         renderWeatherData(data);
+      }
+      catch(error){
+        console.log(`An error occured : ${error}`)
+      }
+  
+}
+ 
+fetchbtn.addEventListener("click",()=>{
+   
+    
+    fetchLocation();
+
+   
+    
 });
-
-function removeDom() {
-  document.querySelector(".first").remove();
-}
-
-function detailData(result) {
-  removeDom();
-  const url = `https://maps.google.com/maps/?q=${result.coord.lat},${result.coord.lon}&output=embed`;
-  locationData.innerHTML = `
-  <div class="top">
-          <h1>Welcome To The Weather App</h1>
-          <p>Here is your current location</p>
-          <div class="latlong">
-            <p>Lat:<span class="lat">${result.coord.lat}</span></p>
-            <p>Long:<span class="long"> ${result.coord.lon}</span></p>
-          </div>
-          <div class="map" id="map">
-          <iframe
-          src=${url}
-          width="360"
-          height="270"
-          frameborder="0"
-          style="border:0;width: 90vw;
-          height: 65vh;margin-top:3rem; border-radius:1rem"></iframe>
-          </div>
-        </div>
-  <div class="down">
-          <div>
-            <h2>Your Weather Data</h2>
-          </div>
-          <div class="data">
-          <p>Location:${result.name}</p>
-            <p>Wind Speed:${result.wind.speed} kmph</span></p>
-            <p>Humidity:${result.main.humidity}</p>
-            <p>Time Zone:${result.timezone}</p>
-            <p>Pressure:${result.main.pressure} bar</p>
-            <p>Wind Direction:${result.wind.deg}</p>
-            <p>Feels like:${result.main.feels_like}</p>
-          </div>
-        </div>
-    `;
-}
